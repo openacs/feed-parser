@@ -8,6 +8,22 @@ ad_library {
 
 namespace eval feed_parser {}
 
+ad_proc -public feed_parser::http_get_xml {
+    {-max_redirect 4}
+    -url:required
+    {-headers ""}
+} {
+    Retrieves a document through HTTP GET in a way that's useful
+    for RSS feeds. Tries to preserve encoding.
+    
+    @author Guan Yang (guan@unicast.org)
+    @creation-date 2004-05-30
+} {
+    package require http
+    ::http::config -accept "text/xml, application/xml, application/rss+xml, application/atom+xml, application/rss, application/atom" -useragent "OpenACS"
+    set http [::http::geturl $url -headers $headers]
+}
+
 ad_proc -public feed_parser::sort_result {
     {-result:required}
 } {
@@ -231,6 +247,18 @@ ad_proc -public feed_parser::parse_feed {
                 of that URL.
     @return A Tcl array-list data structure.
 } {
+    # Unless we have explicit encoding information, we'll assume UTF-8
+    if { [regexp {^[[:space:]]*<\?xml[^>]+encoding="([^"]*)"} $xml match encoding] } {
+        set encoding [string tolower $encoding]
+        array set converts {
+            utf-8 utf-8
+            iso-8859-1 iso8859-1
+        }
+        if { [info exists converts($encoding)] } {
+            set xml [encoding convertfrom $converts($encoding) $xml]
+        }
+    }
+
     # Prefill these slots for errors
     set result(channel) ""
     set result(items) ""
