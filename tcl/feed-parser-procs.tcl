@@ -8,6 +8,181 @@ ad_library {
 
 namespace eval feed_parser {}
 
+ad_proc -public feed_parser::sort_result {
+    {-result:required}
+} {
+    @author Simon Carstensen
+} {
+    set sorted [list]
+    for {set i 0} {$i < [llength $result]} {incr i} {
+	lappend sorted [lindex $result end-$i]
+    }
+    return $sorted
+}
+
+ad_proc -private feed_parser::items_fetch {
+    {-doc_node:required}
+} {
+    Takes a tDOM document node which is supposed to be some
+    form of RSS. Returns a list with the item nodes. Returns
+    an empty list if none could be found.
+
+    @author Guan Yang (guan@unicast.org)
+    @creation-date 2003-07-03
+} {
+    set items [$doc_node selectNodes {//*[local-name()='item' or local-name()='entry']}]
+    return $items
+}
+
+ad_proc -private feed_parser::item_parse {
+    {-item_node:required}
+} {
+    Takes a tDOM node which is supposed to represent an RSS item,
+    and returns a list with the RSS/RDF elements of that node.
+
+    @author Simon Carstensen
+    @author Guan Yang (guan@unicast.org)
+} {
+    set title ""
+    set link ""
+    set guid ""
+    set permalink_p false
+    set description ""
+    set content_encoded ""
+
+    feed_parser::dom::set_child_text -node $item_node -child title
+    feed_parser::dom::set_child_text -node $item_node -child link
+    feed_parser::dom::set_child_text -node $item_node -child guid
+    feed_parser::dom::set_child_text -node $item_node -child description
+    
+    set maybe_atom_p 0
+    
+    # Try to handle Atom link
+    if { [string equal $link ""] } {
+        set link_attr [$item_node selectNodes {*[local-name()='link']/@href}]
+        if { [llength $link_attr] == 1 } {
+            set link [lindex [lindex $link_attr 0] 1]
+            set maybe_atom_p 1
+        }
+    }
+
+    set encoded_nodes [$item_node selectNodes {*[local-name()='encoded' and namespace-uri()='http://purl.org/rss/1.0/modules/content/']}]
+    if { [llength $encoded_nodes] == 1 } {
+        set encoded_node [lindex $encoded_nodes 0]
+	    set content_encoded [$encoded_node text]
+    }
+
+    if { [llength [$item_node selectNodes "*\[local-name()='guid'\]"]] } {
+        # If guid exists, we assume that it's a permalink
+        set permalink_p true
+    }
+
+    # Retrieve isPermaLink attribute
+    set isPermaLink_nodes [$item_node selectNodes "*\[local-name()='guid'\]/@isPermaLink"]
+    if { [llength isPermaLink_nodes] == 1} {
+        set isPermaLink_node [lindex $isPermaLink_nodes 0]
+    	set isPermaLink [lindex $isPermaLink_node 1]
+	if { [string equal $isPermaLink false] } {
+	    set permalink_p false
+	}
+    }
+
+    if { [empty_string_p $link] } {
+        if { [exists_and_not_null guid] } {
+            set link $guid
+            set permalink_p true
+        } elseif { [empty_string_p $guid] && ![string equal $link $guid] } {
+            set permalink_p true
+        }
+    }
+    
+    # Try to handle Atom guid
+    if { [empty_string_p $guid] && $maybe_atom_p } {
+        feed_parser::dom::set_child_text -node $item_node -child id
+        if { [info exists id] } {
+            # We don't really know if it's an URL
+            set guid $id
+            if { [util_url_valid_p $id] } {
+                set permalink_p true
+            } else {
+                set permalink_p false
+            }
+        }
+    }
+    
+    # For Atom, description is summary, content is content_encoded
+    if { $maybe_atom_p } {
+        feed_parser::dom::set_child_text -node $item_node -child summary
+        if { [info exists summary] } {
+            set description $summary
+        }
+        
+        feed_parser::dom::set_child_text -node $item_node -child content
+        if { [info exists content] } {
+            set content_encoded $content
+        }
+    }
+
+    #remove unsafe html
+    set description [feed_parser::remove_unsafe_html -html $description]
+
+    return [list title $title link $link guid $guid permalink_p $permalink_p description $description content_encoded $content_encoded]
+}
+
+ad_proc -private feed_parser::channel_parse {
+    {-channel_node:required}
+} {
+    Takes a tDOM node which is supposed to represent an RSS
+    channel, and returns a list with the RSS/RDF elements
+    of that node. This proc should later be extended to
+    support Dublin Core elements and other funk.
+
+    @author Guan Yang (guan@unicast.org)
+    @creation-date 2003-07-03
+} {
+    set properties [list title link description language copyright lastBuildDate docs generator managingEditor webMaster]
+
+    foreach property $properties {
+        set $property ""
+	    feed_parser::dom::set_child_text -node $channel_node -child $property
+        set channel($property) [set $property]
+    }
+    
+    set channel_name [$channel_node nodeName]
+    
+    # Do weird Atom-like stuff
+    if { [string equal $channel_name "feed"] } {
+        # link
+        if { [string equal $link ""] } {
+            # Link is in a href
+            set link_node [$channel_node selectNodes {*[local-name()='link' and @rel = 'alternate' and @type = 'text/html']/@href}]
+            if { [llength $link_node] == 1 } {
+                set link_node [lindex $link_node 0]
+                set channel(link) [lindex $link_node 1]
+            }
+        }
+        
+        # author
+        set author_node [$channel_node selectNodes {*[local-name()='author']}]
+        if { [llength $author_node] == 1 } {
+            set author_node [lindex $author_node 0]
+            feed_parser::dom::set_child_text -node $author_node -child name
+            feed_parser::dom::set_child_text -node $author_node -child email
+            if { [info exists email] && [info exists name] } {
+                set channel(managingEditor) "$email ($name)"
+            }
+        }
+        
+        # tagline
+        feed_parser::dom::set_child_text -node $channel_node -child tagline
+        if { [info exists tagline] } {
+            set channel(tagline) $tagline
+        }
+    }
+
+    return [array get channel]
+}
+
 ad_proc -private feed_parser::remove_unsafe_html { 
     -html:required
 } {
@@ -108,20 +283,20 @@ ad_proc -public feed_parser::parse_feed {
         
         if { [string equal $doc_name "feed"] } {
             # It's an Atom feed
-            set channel [news_aggregator::channel_parse \
+            set channel [feed_parser::channel_parse \
                            -channel_node $doc_node]
         } else {
             # It looks RSS/RDF'fy
-            set channel [news_aggregator::channel_parse \
+            set channel [feed_parser::channel_parse \
                 -channel_node [$doc_node getElementsByTagName channel]]
         }    
             
-        set item_nodes [news_aggregator::items_fetch -doc_node $doc_node]
-        set item_nodes [news_aggregator::sort_result -result $item_nodes]
+        set item_nodes [feed_parser::items_fetch -doc_node $doc_node]
+        set item_nodes [feed_parser::sort_result -result $item_nodes]
         set items [list]
         
         foreach item_node $item_nodes {
-            lappend items [news_aggregator::item_parse -item_node $item_node]
+            lappend items [feed_parser::item_parse -item_node $item_node]
         }
         
         $doc delete
