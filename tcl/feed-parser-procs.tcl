@@ -250,12 +250,9 @@ ad_proc -public feed_parser::parse_feed {
     # Unless we have explicit encoding information, we'll assume UTF-8
     if { [regexp {^[[:space:]]*<\?xml[^>]+encoding="([^"]*)"} $xml match encoding] } {
         set encoding [string tolower $encoding]
-        array set converts {
-            utf-8 utf-8
-            iso-8859-1 iso8859-1
-        }
-        if { [info exists converts($encoding)] } {
-            set xml [encoding convertfrom $converts($encoding) $xml]
+        set tcl_encoding [ns_encodingforcharset $encoding]
+        if { $tcl_encoding ne "" } {
+            set xml [encoding convertfrom $tcl_encoding $xml]
         }
     }
 
