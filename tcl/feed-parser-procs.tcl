@@ -65,12 +65,24 @@ ad_proc -private feed_parser::item_parse {
     set permalink_p false
     set description ""
     set content_encoded ""
+    set comments ""
+    set author ""
 
     feed_parser::dom::set_child_text -node $item_node -child title
     feed_parser::dom::set_child_text -node $item_node -child link
     feed_parser::dom::set_child_text -node $item_node -child guid
     feed_parser::dom::set_child_text -node $item_node -child description
+    feed_parser::dom::set_child_text -node $item_node -child comments
+    feed_parser::dom::set_child_text -node $item_node -child author
+    feed_parser::dom::set_child_text -node $item_node -child pubDate
     
+    set pub_date_rfc822 $pubDate
+    feed_parser::dom::set_child_text -node $item_node -child pubDate
+    if { $pub_date_rfc822 eq "" || 
+         [catch {set pub_date [clock scan $pub_date_rfc822]}] } {
+        set pub_date {}
+    } 
+        
     set maybe_atom_p 0
     
     # Try to handle Atom link
@@ -142,7 +154,7 @@ ad_proc -private feed_parser::item_parse {
     #remove unsafe html
     set description [feed_parser::remove_unsafe_html -html $description]
 
-    return [list title $title link $link guid $guid permalink_p $permalink_p description $description content_encoded $content_encoded]
+    return [list title $title link $link guid $guid permalink_p $permalink_p description $description content_encoded $content_encoded author $author comments $comments pub_date $pub_date]
 }
 
 ad_proc -private feed_parser::channel_parse {
