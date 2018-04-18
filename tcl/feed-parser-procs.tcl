@@ -172,16 +172,16 @@ ad_proc -private feed_parser::channel_parse {
 
     foreach property $properties {
         set $property ""
-	    feed_parser::dom::set_child_text -node $channel_node -child $property
+        feed_parser::dom::set_child_text -node $channel_node -child $property
         set channel($property) [set $property]
     }
-    
+
     set channel_name [$channel_node nodeName]
-    
+
     # Do weird Atom-like stuff
     if { $channel_name eq "feed" } {
         # link
-        if { $link eq ""] } {
+        if { $link eq "" } {
             # Link is in a href
             set link_node [$channel_node selectNodes {*[local-name()='link' and @rel = 'alternate' and @type = 'text/html']/@href}]
             if { [llength $link_node] == 1 } {
@@ -189,7 +189,7 @@ ad_proc -private feed_parser::channel_parse {
                 set channel(link) [lindex $link_node 1]
             }
         }
-        
+
         # author
         set author_node [$channel_node selectNodes {*[local-name()='author']}]
         if { [llength $author_node] == 1 } {
@@ -200,7 +200,7 @@ ad_proc -private feed_parser::channel_parse {
                 set channel(managingEditor) "$email ($name)"
             }
         }
-        
+
         # tagline
         feed_parser::dom::set_child_text -node $channel_node -child tagline
         if { [info exists tagline] } {
