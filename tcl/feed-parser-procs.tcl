@@ -86,7 +86,7 @@ ad_proc -private feed_parser::item_parse {
     set maybe_atom_p 0
     
     # Try to handle Atom link
-    if { [string equal $link ""] } {
+    if { $link eq "" } {
         set link_attr [$item_node selectNodes {*[local-name()='link']/@href}]
         if { [llength $link_attr] == 1 } {
             set link [lindex [lindex $link_attr 0] 1]
@@ -110,22 +110,22 @@ ad_proc -private feed_parser::item_parse {
     if { [llength isPermaLink_nodes] == 1} {
         set isPermaLink_node [lindex $isPermaLink_nodes 0]
     	set isPermaLink [lindex $isPermaLink_node 1]
-	if { [string equal $isPermaLink false] } {
+	if { $isPermaLink eq "false" } {
 	    set permalink_p false
 	}
     }
 
-    if { [empty_string_p $link] } {
-        if { [exists_and_not_null guid] } {
+    if { $link eq "" } {
+        if { [info exists guid] && $guid ne "" } {
             set link $guid
             set permalink_p true
-        } elseif { [empty_string_p $guid] && ![string equal $link $guid] } {
+        } elseif { $guid eq "" && $link ne $guid } {
             set permalink_p true
         }
     }
     
     # Try to handle Atom guid
-    if { [empty_string_p $guid] && $maybe_atom_p } {
+    if { $guid eq "" && $maybe_atom_p } {
         feed_parser::dom::set_child_text -node $item_node -child id
         if { [info exists id] } {
             # We don't really know if it's an URL
@@ -179,9 +179,9 @@ ad_proc -private feed_parser::channel_parse {
     set channel_name [$channel_node nodeName]
     
     # Do weird Atom-like stuff
-    if { [string equal $channel_name "feed"] } {
+    if { $channel_name eq "feed" } {
         # link
-        if { [string equal $link ""] } {
+        if { $link eq ""] } {
             # Link is in a href
             set link_node [$channel_node selectNodes {*[local-name()='link' and @rel = 'alternate' and @type = 'text/html']/@href}]
             if { [llength $link_node] == 1 } {
@@ -278,7 +278,7 @@ ad_proc -public feed_parser::parse_feed {
         set doc [dom parse $xml]
         set doc_node [$doc documentElement]
         set node_name [$doc_node nodeName]
-    
+
         # feed is the doc-node name for Atom feeds
         if { [lsearch {rdf RDF rdf:RDF rss feed} $node_name] == -1 } {
             ns_log Debug "feed_parser::parse_feed: doc node name is not rdf, RDF, rdf:RDF or rss"
@@ -290,35 +290,35 @@ ad_proc -public feed_parser::parse_feed {
         ns_log Debug "feed_parser::parse_feed: error in initial itdom parse, errmsg = $errmsg"
         set rss_p 0
     }
-    
+
     if { !$rss_p } {
         # not valid xml, let's try autodiscovery
         ns_log Debug "feed_parser::parse_feed: not valid xml, we'll try autodiscovery"
-        
+
         set doc [dom parse -html $xml]
         set doc_node [$doc documentElement]
-        
+
         set link_path {/html/head/link[@rel='alternate' and @title='RSS' and @type='application/rss+xml']/@href}
         set link_nodes [$doc_node selectNodes $link_path]
-      
+
         $doc delete
-    
+
         if { [llength $link_nodes] == 1} {
             set link_node [lindex $link_nodes 0]
             set feed_url [lindex $link_node 1]
             array set f [ad_httpget -url $feed_url]
             return [feed_parser::parse_feed -xml $f(page)]
         }
-        
+
         set result(status) "error"
         set result(error) "Not RSS and contained no autodiscovery element"
         return [array get result]
     }
-    
+
     if { [catch {
         set doc_name [$doc_node nodeName]
-        
-        if { [string equal $doc_name "feed"] } {
+
+        if { $doc_name eq "feed" } {
             # It's an Atom feed
             set channel [feed_parser::channel_parse \
                            -channel_node $doc_node]
@@ -326,16 +326,16 @@ ad_proc -public feed_parser::parse_feed {
             # It looks RSS/RDF'fy
             set channel [feed_parser::channel_parse \
                 -channel_node [$doc_node getElementsByTagName channel]]
-        }    
-            
+        }
+
         set item_nodes [feed_parser::items_fetch -doc_node $doc_node]
         set item_nodes [feed_parser::sort_result -result $item_nodes]
         set items [list]
-        
+
         foreach item_node $item_nodes {
             lappend items [feed_parser::item_parse -item_node $item_node]
         }
-        
+
         $doc delete
     } err] } {
         set result(status) "error"
