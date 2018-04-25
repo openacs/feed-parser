@@ -29,7 +29,7 @@ ad_proc -public feed_parser::sort_result {
 } {
     @author Simon Carstensen
 } {
-    set sorted [list]
+    set sorted {}
     for {set i 0} {$i < [llength $result]} {incr i} {
 	lappend sorted [lindex $result end-$i]
     }
@@ -330,7 +330,7 @@ ad_proc -public feed_parser::parse_feed {
 
         set item_nodes [feed_parser::items_fetch -doc_node $doc_node]
         set item_nodes [feed_parser::sort_result -result $item_nodes]
-        set items [list]
+        set items {}
 
         foreach item_node $item_nodes {
             lappend items [feed_parser::item_parse -item_node $item_node]
