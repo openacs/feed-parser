@@ -1,6 +1,6 @@
 ad_library {
     Various procs to make using tDOM a bit easier.
-    
+
     @creation-date 2003-12-28
     @author Guan Yang (guan@unicast.org)
     @author Simon Carstensen (simon@bcuni.net)
@@ -15,7 +15,7 @@ ad_proc -private feed_parser::dom::set_child_text {
     If node contains a child node named child,
     the variable child is set to the text of that node
     in the caller's stack frame. If the node doesn't
-    exist, set the text to an emptry string in the
+    exist, set the text to an empty string in the
     caller's stack frame.
 
     @author Guan Yang
