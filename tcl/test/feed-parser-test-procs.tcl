@@ -1,6 +1,6 @@
 ad_library {
 
-    News aggregator tests
+    Feed Parser Tests
 
 }
 
