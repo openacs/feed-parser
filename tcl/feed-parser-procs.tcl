@@ -29,11 +29,7 @@ ad_proc -public feed_parser::sort_result {
 } {
     @author Simon Carstensen
 } {
-    set sorted [list]
-    for {set i 0} {$i < [llength $result]} {incr i} {
-	lappend sorted [lindex $result end-$i]
-    }
-    return $sorted
+    return [lreverse $result]
 }
 
 ad_proc -private feed_parser::items_fetch {
