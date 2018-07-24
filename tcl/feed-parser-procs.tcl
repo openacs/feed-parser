@@ -1,6 +1,6 @@
 ad_library {
     The procs that make up our Feed Parser.
-    
+
     @creation-date 2003-12-28
     @author Guan Yang (guan@unicast.org)
     @author Simon Carstensen (simon@bcuni.net)
@@ -15,7 +15,7 @@ ad_proc -public feed_parser::http_get_xml {
 } {
     Retrieves a document through HTTP GET in a way that's useful
     for RSS feeds. Tries to preserve encoding.
-    
+
     @author Guan Yang (guan@unicast.org)
     @creation-date 2004-05-30
 } {
@@ -75,16 +75,16 @@ ad_proc -private feed_parser::item_parse {
     feed_parser::dom::set_child_text -node $item_node -child comments
     feed_parser::dom::set_child_text -node $item_node -child author
     feed_parser::dom::set_child_text -node $item_node -child pubDate
-    
+
     set pub_date_rfc822 $pubDate
     feed_parser::dom::set_child_text -node $item_node -child pubDate
-    if { $pub_date_rfc822 eq "" || 
+    if { $pub_date_rfc822 eq "" ||
          [catch {set pub_date [clock scan $pub_date_rfc822]}] } {
         set pub_date {}
-    } 
-        
+    }
+
     set maybe_atom_p 0
-    
+
     # Try to handle Atom link
     if { $link eq "" } {
         set link_attr [$item_node selectNodes {*[local-name()='link']/@href}]
@@ -123,7 +123,7 @@ ad_proc -private feed_parser::item_parse {
             set permalink_p true
         }
     }
-    
+
     # Try to handle Atom guid
     if { $guid eq "" && $maybe_atom_p } {
         feed_parser::dom::set_child_text -node $item_node -child id
@@ -137,14 +137,14 @@ ad_proc -private feed_parser::item_parse {
             }
         }
     }
-    
+
     # For Atom, description is summary, content is content_encoded
     if { $maybe_atom_p } {
         feed_parser::dom::set_child_text -node $item_node -child summary
         if { [info exists summary] } {
             set description $summary
         }
-        
+
         feed_parser::dom::set_child_text -node $item_node -child content
         if { [info exists content] } {
             set content_encoded $content
@@ -211,7 +211,7 @@ ad_proc -private feed_parser::channel_parse {
     return [array get channel]
 }
 
-ad_proc -private feed_parser::remove_unsafe_html { 
+ad_proc -private feed_parser::remove_unsafe_html {
     -html:required
 } {
     Make sure we are consuming RSS safely by removing unsafe tags.
@@ -247,7 +247,7 @@ ad_proc -public feed_parser::parse_feed {
     {-autodiscover:boolean 1}
 } {
     Parse a string believed to be a syndication feed.
-    
+
     @author Guan Yang (guan@unicast.org)
     @creation-date 2003-12-28
     @param xml A string containing an XML document.
