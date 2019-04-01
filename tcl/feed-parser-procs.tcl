@@ -255,22 +255,11 @@ ad_proc -public feed_parser::parse_feed {
                 of that URL.
     @return A Tcl array-list data structure.
 } {
-    # Unless we have explicit encoding information, we'll assume UTF-8
-    if { [regexp {^[[:space:]]*<\?xml[^>]+encoding="([^"]*)"} $xml match encoding] } {
-        set encoding [string tolower $encoding]
-        set tcl_encoding [ns_encodingforcharset $encoding]
-        if { $tcl_encoding ne "" } {
-            set xml [encoding convertfrom $tcl_encoding $xml]
-        }
-    }
-
     # Prefill these slots for errors
     set result(channel) ""
     set result(items) ""
 
     if { [catch {
-        # Pre-process the doc and remove any processing instruction
-        regsub {^<\?xml [^\?]+\?>} $xml {<?xml version="1.0"?>} xml
         set doc [dom parse $xml]
         set doc_node [$doc documentElement]
         set node_name [$doc_node nodeName]
