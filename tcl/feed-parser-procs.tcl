@@ -19,9 +19,7 @@ ad_proc -public feed_parser::http_get_xml {
     @author Guan Yang (guan@unicast.org)
     @creation-date 2004-05-30
 } {
-    package require http
-    ::http::config -accept "text/xml, application/xml, application/rss+xml, application/atom+xml, application/rss, application/atom" -useragent "OpenACS"
-    set http [::http::geturl $url -headers $headers]
+    return [dict get [util::http::get -url $url] page]
 }
 
 ad_proc -public feed_parser::sort_result {
