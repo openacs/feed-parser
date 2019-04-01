@@ -58,7 +58,7 @@ aa_register_case -cats {
     and parseable
 } {
     # Set a test XML content
-    set xml [encoding convertto utf-8 {
+    set xml {
         <?xml version="1.0" encoding="utf-8"?>
         <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
         <channel>
@@ -210,7 +210,7 @@ aa_register_case -cats {
         </item>
         </channel>
         </rss>
-    }]
+    }
 
     set test [feed_parser::test::parse_feed -xml $xml]
     set success_p [dict get $test success_p]
