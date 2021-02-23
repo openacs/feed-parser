@@ -249,7 +249,7 @@ ad_proc -public feed_parser::parse_feed {
                 first glance not to be an XML document, treat it as an HTML
                 document and attempt to extract an RSS autodiscovery element.
                 If such an element is found, the URL will be retrieved using
-                ad_httpget and this procedure will be applied to the content
+                HTTP GET and this procedure will be applied to the content
                 of that URL.
     @return A Tcl array-list data structure.
 } {
@@ -289,8 +289,8 @@ ad_proc -public feed_parser::parse_feed {
         if { [llength $link_nodes] == 1} {
             set link_node [lindex $link_nodes 0]
             set feed_url [lindex $link_node 1]
-            array set f [ad_httpget -url $feed_url]
-            return [feed_parser::parse_feed -xml $f(page)]
+            set r [util::http::get -url $feed_url]
+            return [feed_parser::parse_feed -xml [dict get $r page]]
         }
 
         set result(status) "error"
