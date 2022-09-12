@@ -25,6 +25,8 @@ ad_proc -public feed_parser::http_get_xml {
 ad_proc -public feed_parser::sort_result {
     {-result:required}
 } {
+    Sort result list.
+
     @author Simon Carstensen
 } {
     return [lreverse $result]
