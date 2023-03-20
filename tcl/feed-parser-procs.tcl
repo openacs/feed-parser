@@ -8,13 +8,19 @@ ad_library {
 
 namespace eval feed_parser {}
 
-ad_proc -public feed_parser::http_get_xml {
+ad_proc -deprecated feed_parser::http_get_xml {
     {-max_redirect 4}
     -url:required
     {-headers ""}
 } {
     Retrieves a document through HTTP GET in a way that's useful
     for RSS feeds. Tries to preserve encoding.
+
+    DEPRECATED: this proc is trivial wrapper over the HTTP client api
+    and is not used anywhere in the codebase.
+
+    @see util::http::get
+    @see ns_http
 
     @author Guan Yang (guan@unicast.org)
     @creation-date 2004-05-30
