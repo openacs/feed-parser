@@ -28,10 +28,15 @@ ad_proc -deprecated feed_parser::http_get_xml {
     return [dict get [util::http::get -url $url] page]
 }
 
-ad_proc -public feed_parser::sort_result {
+ad_proc -deprecated feed_parser::sort_result {
     {-result:required}
 } {
     Sort result list.
+
+    DEPRECATED: this proc is a trivial wrapper over lreverse. As it is
+    only used internally, it can be easily inlined.
+
+    @see lreverse
 
     @author Simon Carstensen
 } {
@@ -320,7 +325,7 @@ ad_proc -public feed_parser::parse_feed {
         }
 
         set item_nodes [feed_parser::items_fetch -doc_node $doc_node]
-        set item_nodes [feed_parser::sort_result -result $item_nodes]
+        set item_nodes [lreverse $item_nodes]
         set items [list]
 
         foreach item_node $item_nodes {
