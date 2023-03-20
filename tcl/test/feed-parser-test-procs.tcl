@@ -4,10 +4,13 @@ ad_library {
 
 }
 
-ad_proc -private feed_parser::test::parse_feed {
+ad_proc -public feed_parser::test::parse_feed {
     -xml:required
 } {
     Checks basic functionality of feed_parser::parse_feed.
+
+    This proc is also used by the news-aggregator tests to check that
+    all sources can be parsed.
 
     @see feed_parser::parse_feed
     @return dict containing variables 'success_p' and 'result',
@@ -53,6 +56,7 @@ aa_register_case -cats {
 } -procs {
     util::http::get
     feed_parser::parse_feed
+    feed_parser::test::parse_feed
 } parse_feed_ok {
     Check that all source feeds currently configured keep being valid
     and parseable
