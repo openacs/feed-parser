@@ -4,7 +4,7 @@ ad_library {
 
 }
 
-ad_proc -public feed_parser::test::parse_feed {
+ad_proc -private feed_parser::test::parse_feed {
     -xml:required
 } {
     Checks basic functionality of feed_parser::parse_feed.
